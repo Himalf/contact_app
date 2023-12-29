@@ -1,6 +1,10 @@
+import 'dart:io';
+
 import 'package:contact/models/contact_model.dart';
 import 'package:contact/models/lat_lng_model.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
@@ -10,6 +14,14 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  Future<void> _makePhoneCall(String phoneNumber) async {
+    final Uri launchUri = Uri(
+      scheme: 'tel',
+      path: phoneNumber,
+    );
+    await launchUrl(launchUri);
+  }
+
   List<ContactModel> contacts = [
     ContactModel(
         name: "Himal",
@@ -30,9 +42,13 @@ class _MyHomePageState extends State<MyHomePage> {
             "https://images.pexels.com/photos/2848028/pexels-photo-2848028.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
         position: LatLngModel(latitude: 27.6866, longitude: 27.6866)),
   ];
+  final ImagePicker picker = ImagePicker();
+  File? image;
   @override
   Widget build(BuildContext context) {
     double deviceHeight = MediaQuery.of(context).size.height;
+    double devicewidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       appBar: AppBar(
         toolbarOpacity: 1,
@@ -49,60 +65,110 @@ class _MyHomePageState extends State<MyHomePage> {
           IconButton(
               onPressed: () {
                 showModalBottomSheet(
+                    isScrollControlled: true,
                     // isDismissible: true,
                     context: context,
-                    builder: (_) => BottomSheet(
-                        onClosing: () {},
-                        builder: (_) => Container(
-                              height: deviceHeight,
-                              color: const Color.fromRGBO(255, 255, 255, 1),
-                              child: Container(
-                                margin: const EdgeInsets.all(10),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  // crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  children: [
-                                    TextFormField(
-                                      decoration: InputDecoration(
-                                        label: Text(
-                                          "Name",
-                                          style: TextStyle(
-                                              color: Colors.blueAccent,
-                                              fontWeight: FontWeight.bold),
-                                        ),
-                                        hintText: "Enter Name of person",
-                                      ),
-                                    ),
-                                    TextFormField(
-                                      decoration: InputDecoration(
-                                          label: Text(
-                                            "PhoneNumber",
-                                            style: TextStyle(
-                                                color: Colors.blueAccent,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                          hintText: "Enter Phone number"),
-                                    ),
-                                    TextFormField(
-                                      decoration: InputDecoration(
-                                          label: Text(
-                                            "Image",
-                                            style: TextStyle(
-                                                color: Colors.blueAccent,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                          hintText: "Enter Image URL"),
-                                    ),
-                                    Container(
-                                      margin: EdgeInsets.all(30),
-                                      child: ElevatedButton(
+                    builder: (_) =>
+                        StatefulBuilder(builder: (context, setState) {
+                          return Padding(
+                            padding: EdgeInsets.only(
+                                bottom:
+                                    MediaQuery.of(context).viewInsets.bottom),
+                            child: SingleChildScrollView(
+                              child: Column(
+                                // mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      IconButton(
                                           onPressed: () {},
-                                          child: Text("Add Contacts")),
-                                    )
-                                  ],
-                                ),
+                                          icon: Icon(Icons.close))
+                                    ],
+                                  ),
+                                  Text(
+                                    "Add Contact",
+                                    style: TextStyle(
+                                        fontSize: 25,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  SizedBox(
+                                    height: deviceHeight * 0.02,
+                                  ),
+                                  Container(
+                                    height: 90,
+                                    width: 80,
+                                    decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10),
+                                        border:
+                                            Border.all(color: Colors.black)),
+                                    child: image == null
+                                        ? IconButton(
+                                            onPressed: () async {
+                                              final XFile? pickedImage =
+                                                  await picker.pickImage(
+                                                      source:
+                                                          ImageSource.gallery);
+                                              print(pickedImage!.path);
+                                              setState(() {
+                                                image = File(pickedImage.path);
+                                              });
+                                            },
+                                            icon: Icon(Icons.add_a_photo))
+                                        : Image.file(
+                                            image!,
+                                            fit: BoxFit.cover,
+                                          ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 40),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      // crossAxisAlignment: CrossAxisAlignment.stretch,
+                                      children: [
+                                        TextFormField(
+                                          decoration: InputDecoration(
+                                            label: Text(
+                                              "Name",
+                                              style: TextStyle(
+                                                  color: Colors.blueAccent,
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                            hintText: "Enter Name of person",
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          height: deviceHeight * 0.02,
+                                        ),
+                                        TextFormField(
+                                          decoration: InputDecoration(
+                                              label: Text(
+                                                "PhoneNumber",
+                                                style: TextStyle(
+                                                    color: Colors.blueAccent,
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                              hintText: "Enter Phone number"),
+                                        ),
+                                        SizedBox(
+                                          height: deviceHeight * 0.02,
+                                        ),
+                                        ElevatedButton(
+                                            onPressed: () {},
+                                            child: Text("Add Contacts"))
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
-                            )));
+                            ),
+                          );
+                        }));
               },
               icon: Icon(
                 Icons.add,
@@ -132,7 +198,9 @@ class _MyHomePageState extends State<MyHomePage> {
               title: Text(contacts[index].name),
               subtitle: Text(contacts[index].phoneNumber),
               trailing: IconButton(
-                onPressed: () {},
+                onPressed: () {
+                  _makePhoneCall(contacts[index].phoneNumber);
+                },
                 icon: Icon(Icons.phone),
               ),
             );
