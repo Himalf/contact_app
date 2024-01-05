@@ -1,5 +1,5 @@
+import 'dart:developer';
 import 'dart:io';
-
 import 'package:contact/models/contact_model.dart';
 import 'package:contact/models/lat_lng_model.dart';
 import 'package:flutter/material.dart';
@@ -22,28 +22,30 @@ class _MyHomePageState extends State<MyHomePage> {
     await launchUrl(launchUri);
   }
 
-  List<ContactModel> contacts = [
-    ContactModel(
-        name: "Himal",
-        phoneNumber: "9867527352",
-        image:
-            "https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
-        position: LatLngModel(latitude: 27.6866, longitude: 27.6866)),
-    ContactModel(
-        name: "Hari",
-        phoneNumber: "9765310103",
-        image:
-            "https://images.pexels.com/photos/1542085/pexels-photo-1542085.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
-        position: LatLngModel(latitude: 27.6866, longitude: 27.6866)),
-    ContactModel(
-        name: "Ramlal",
-        phoneNumber: "9765310103",
-        image:
-            "https://images.pexels.com/photos/2848028/pexels-photo-2848028.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
-        position: LatLngModel(latitude: 27.6866, longitude: 27.6866)),
-  ];
+  List<ContactModel> contacts = [];
   final ImagePicker picker = ImagePicker();
   File? image;
+  TextEditingController fullNameController = TextEditingController();
+  TextEditingController phoneNameController = TextEditingController();
+  clearField() {
+    image = null;
+    fullNameController.clear();
+    phoneNameController.clear();
+  }
+
+  selectedImage(ImageSource source, Function(void Function()) setState) async {
+    Navigator.pop(context);
+    try {
+      final XFile? pickedImage = await picker.pickImage(source: source);
+      // print(pickedImage!.path);
+      setState(() {
+        image = File(pickedImage!.path);
+      });
+    } catch (err) {
+      log(err.toString());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     double deviceHeight = MediaQuery.of(context).size.height;
@@ -64,6 +66,7 @@ class _MyHomePageState extends State<MyHomePage> {
         actions: [
           IconButton(
               onPressed: () {
+                clearField();
                 showModalBottomSheet(
                     isScrollControlled: true,
                     // isDismissible: true,
@@ -84,7 +87,9 @@ class _MyHomePageState extends State<MyHomePage> {
                                         CrossAxisAlignment.center,
                                     children: [
                                       IconButton(
-                                          onPressed: () {},
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                          },
                                           icon: Icon(Icons.close))
                                     ],
                                   ),
@@ -107,14 +112,38 @@ class _MyHomePageState extends State<MyHomePage> {
                                     child: image == null
                                         ? IconButton(
                                             onPressed: () async {
-                                              final XFile? pickedImage =
-                                                  await picker.pickImage(
-                                                      source:
-                                                          ImageSource.gallery);
-                                              print(pickedImage!.path);
-                                              setState(() {
-                                                image = File(pickedImage.path);
-                                              });
+                                              showDialog(
+                                                  context: context,
+                                                  builder: (_) => AlertDialog(
+                                                        title: Text(
+                                                            "Choose a Source"),
+                                                        content: Text(
+                                                            "Camera or gallery"),
+                                                        actions: [
+                                                          TextButton.icon(
+                                                              onPressed: () {
+                                                                selectedImage(
+                                                                    ImageSource
+                                                                        .camera,
+                                                                    setState);
+                                                              },
+                                                              icon: Icon(
+                                                                  Icons.camera),
+                                                              label: Text(
+                                                                  "camera")),
+                                                          TextButton.icon(
+                                                              onPressed: () {
+                                                                selectedImage(
+                                                                    ImageSource
+                                                                        .gallery,
+                                                                    setState);
+                                                              },
+                                                              icon: Icon(
+                                                                  Icons.image),
+                                                              label: Text(
+                                                                  "Gallery"))
+                                                        ],
+                                                      ));
                                             },
                                             icon: Icon(Icons.add_a_photo))
                                         : Image.file(
@@ -131,6 +160,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                       // crossAxisAlignment: CrossAxisAlignment.stretch,
                                       children: [
                                         TextFormField(
+                                          controller: fullNameController,
                                           decoration: InputDecoration(
                                             label: Text(
                                               "Name",
@@ -145,6 +175,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                           height: deviceHeight * 0.02,
                                         ),
                                         TextFormField(
+                                          keyboardType: TextInputType.phone,
+                                          controller: phoneNameController,
                                           decoration: InputDecoration(
                                               label: Text(
                                                 "PhoneNumber",
@@ -159,7 +191,30 @@ class _MyHomePageState extends State<MyHomePage> {
                                           height: deviceHeight * 0.02,
                                         ),
                                         ElevatedButton(
-                                            onPressed: () {},
+                                            onPressed: () {
+                                              Navigator.pop(context);
+                                              this.setState(() {
+                                                contacts.add(ContactModel(
+                                                    name:
+                                                        fullNameController.text,
+                                                    phoneNumber:
+                                                        phoneNameController
+                                                            .text,
+                                                    image: image,
+                                                    position: LatLngModel(
+                                                        latitude: 112.3,
+                                                        longitude: 232.22)));
+                                                clearField();
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  SnackBar(
+                                                      backgroundColor:
+                                                          Colors.green,
+                                                      content: Text(
+                                                          "contact added")),
+                                                );
+                                              });
+                                            },
                                             child: Text("Add Contacts"))
                                       ],
                                     ),
@@ -189,10 +244,12 @@ class _MyHomePageState extends State<MyHomePage> {
                     color: Colors.blue),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(50),
-                  child: Image.network(
-                    contacts[index].image,
-                    fit: BoxFit.cover,
-                  ),
+                  child: contacts[index].image == null
+                      ? Icon(Icons.person)
+                      : Image.file(
+                          contacts[index].image!,
+                          fit: BoxFit.cover,
+                        ),
                 ),
               ),
               title: Text(contacts[index].name),
